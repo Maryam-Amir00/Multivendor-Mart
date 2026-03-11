@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}My Orders — MiniVendor{% endblock %}
+{% block content %}
+
+<h1 class="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+
+{% if orders %}
+<div class="space-y-6">
+
+  {% for order in orders %}
+  <div class="bg-white shadow-sm rounded-2xl p-0 overflow-hidden border border-gray-200">
+
+    <!-- Header -->
+    <div class="px-5 py-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 bg-gray-50">
+      <div class="text-gray-900">
+        <h2 class="text-xl font-semibold">Order #{{ order.id }}</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          {{ order.created_at|date:"F d, Y — h:i A" }}
+        </p>
+      </div>
+      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold border border-gray-300 text-gray-700 bg-white">
+        <span class="w-2.5 h-2.5 rounded-full {% if order.is_paid %}bg-green-500{% else %}bg-yellow-500{% endif %}"></span>
+        {% if order.is_paid %}Paid{% else %}Pending Payment{% endif %}
+      </span>
+    </div>
+
+    <!-- Body -->
+    <div class="p-5">
+      <!-- Items summary -->
+      <div class="space-y-3">
+
+        {% for item in order.items.all %}
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-gray-200 rounded-xl p-3 hover:shadow-sm transition">
+
+          <div class="flex items-center gap-4">
+
+            {% if item.product.image %}
+            <img src="{{ item.product.image.url }}"
+                 class="w-16 h-16 object-cover rounded-lg shadow-sm" />
+            {% else %}
+            <img src="/static/placeholder.png"
+                 class="w-16 h-16 object-cover bg-gray-200 rounded-lg shadow-sm" />
+            {% endif %}
+
+            <div>
+              <p class="font-medium text-gray-900">{{ item.product.name }}</p>
+              <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
+            </div>
+
+          </div>
+
+          <p class="font-semibold text-gray-900 text-lg">
+            ${{ item.price|floatformat:2 }}
+          </p>
+
+        </div>
+        {% endfor %}
+
+      </div>
+
+      <!-- Total + Button -->
+      <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <p class="text-lg font-semibold text-gray-900">
+          Total:
+          <span class="text-gray-700">
+            ${{ order.total_amount }}
+          </span>
+        </p>
+
+        <a href="{% url 'order_detail' order.id %}"
+           class="px-5 py-3 border border-gray-300 text-gray-800 text-sm font-semibold rounded-xl hover:bg-gray-100 transition text-center">
+          View Details
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+
+{% else %}
+
+<!-- EMPTY STATE -->
+<div class="text-center py-20">
+  <img src="/static/empty.png" class="mx-auto w-40 opacity-60" />
+  <h2 class="text-2xl font-semibold text-gray-700 mt-6">No Orders Yet</h2>
+  <p class="text-gray-500 mt-2">Your orders will appear here once you shop.</p>
+
+  <a href="{% url 'product_list' %}"
+     class="mt-6 inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+    Shop Now
+  </a>
+</div>
+
+{% endif %}
+
+{% endblock %}

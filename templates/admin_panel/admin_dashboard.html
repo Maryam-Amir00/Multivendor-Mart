@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — MiniVendor{% endblock %}
+{% block content %}
+
+<div class="space-y-10">
+
+    <!-- PAGE HEADER -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+
+        <span class="text-gray-600">Welcome, {{ user.username }}</span>
+    </div>
+
+    <!-- PENDING VENDORS -->
+    <section class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Pending Vendor Approvals</h2>
+
+        {% if pending_vendors %}
+        <div class="space-y-3">
+
+            {% for vendor in pending_vendors %}
+            <div class="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                    <p class="font-medium">{{ vendor.username }}</p>
+                    <p class="text-sm text-gray-500">{{ vendor.email }}</p>
+                </div>
+
+                <a href="{% url 'approve_vendor' vendor.id %}"
+                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    Approve
+                </a>
+            </div>
+            {% endfor %}
+
+        </div>
+        {% else %}
+        <p class="text-gray-500">No pending vendors.</p>
+        {% endif %}
+    </section>
+
+    <!-- ALL ORDERS -->
+    <section class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">All Orders</h2>
+
+        {% if orders %}
+        <div class="space-y-4">
+            {% for order in orders %}
+            <a href="{% url 'admin_order_detail' order.id %}" class="block border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50 transition cursor-pointer">
+
+                <div>
+                    <p class="font-medium">Order #{{ order.id }}</p>
+                    <p class="text-gray-600 text-sm">
+                        Customer: {{ order.customer.username }} |
+                        {{ order.created_at|date:"M d, Y H:i" }}
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Payment badge -->
+                    {% if order.is_paid %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                            Paid
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">
+                            Unpaid
+                        </span>
+                    {% endif %}
+                    <span class="text-gray-400">→</span>
+                </div>
+
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500">No orders found.</p>
+        {% endif %}
+    </section>
+
+</div>
+
+{% endblock %}

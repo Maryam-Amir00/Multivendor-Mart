@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Checkout — MiniVendor{% endblock %}
+{% block content %}
+
+<h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+{% if not cart_items %}
+<!-- EMPTY CART VIEW -->
+<div class="text-center py-20">
+    <img src="/static/empty.png" class="mx-auto w-40 opacity-60" />
+    <h2 class="text-2xl font-semibold text-gray-700 mt-6">Your cart is empty</h2>
+    <p class="text-gray-500 mt-2">Add products to continue checkout.</p>
+
+    <a href="{% url 'product_list' %}"
+       class="mt-6 inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+        Browse Products
+    </a>
+</div>
+
+{% else %}
+
+<!-- GRID LAYOUT -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+    <!-- LEFT: CART ITEMS -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
+
+            {% for item in cart_items %}
+            <div class="flex items-center justify-between border-b pb-5 mb-5">
+
+                <!-- PRODUCT + IMAGE -->
+                <div class="flex items-center gap-5">
+                    {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}"
+                             class="w-24 h-24 rounded-xl object-cover shadow" />
+                    {% else %}
+                        <img src="/static/placeholder.png"
+                             class="w-24 h-24 rounded-xl bg-gray-200 object-cover shadow" />
+                    {% endif %}
+
+                    <div>
+                        <h3 class="font-semibold text-gray-900">
+                            {{ item.product.name }}
+                        </h3>
+                        <p class="text-gray-500 text-sm">Quantity: {{ item.qty }}</p>
+                        <p class="font-semibold text-indigo-600 text-sm mt-1">
+                            ${{ item.product.price }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SUBTOTAL -->
+                <p class="text-indigo-600 text-lg font-semibold">
+                    ${{ item.subtotal }}
+                </p>
+
+            </div>
+            {% endfor %}
+
+            <!-- TOTAL SECTION -->
+            <div class="space-y-2 mt-6 text-lg">
+                <div class="flex justify-between text-gray-700">
+                    <span>Subtotal</span>
+                    <span>${{ total }}</span>
+                </div>
+
+                <div class="flex justify-between text-gray-700">
+                    <span>Shipping</span>
+                    <span class="text-green-600 font-medium">Free</span>
+                </div>
+
+                <div class="border-t pt-4 flex justify-between font-bold text-xl text-gray-900">
+                    <span>Total</span>
+                    <span class="text-indigo-600">${{ total }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- RIGHT: ADDRESS & PAYMENT -->
+    <!-- RIGHT: SHIPPING DETAILS -->
+<div class="lg:sticky lg:top-24">
+
+    <form method="post" class="bg-white rounded-2xl shadow p-6 space-y-6">
+        {% csrf_token %}
+
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Shipping Details</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="text-red-600 text-sm">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <!-- FULL NAME -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Full Name</label>
+            <input 
+                type="text" 
+                name="full_name"
+                required
+                placeholder="e.g. Ali Khan"
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- PHONE NUMBER -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Phone Number</label>
+            <input 
+                type="text" 
+                name="phone"
+                required
+                placeholder="e.g. 0301-1234567"
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- EMAIL (Optional) -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Email (Optional)</label>
+            <input 
+                type="email" 
+                name="email"
+                placeholder="your@email.com"
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- COUNTRY -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Country</label>
+            <select
+                name="country"
+                required
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Pakistan">Pakistan</option>
+                <option value="UAE">UAE</option>
+                <option value="Saudi Arabia">Saudi Arabia</option>
+                <option value="Qatar">Qatar</option>
+            </select>
+        </div>
+
+        <!-- CITY + POSTAL CODE -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700">City</label>
+                <input 
+                    type="text" 
+                    name="city"
+                    required
+                    placeholder="e.g. Lahore"
+                    class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-gray-700">Postal Code</label>
+                <input 
+                    type="text"
+                    name="postal_code"
+                    required
+                    placeholder="e.g. 54000"
+                    class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+        </div>
+
+        <!-- STREET ADDRESS -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Street Address</label>
+            <input 
+                type="text"
+                name="street"
+                required
+                placeholder="e.g. House #25, Street 12"
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- APARTMENT / OPTIONAL -->
+        <div>
+            <label class="text-sm font-medium text-gray-700">Apartment / Floor (Optional)</label>
+            <input 
+                type="text"
+                name="apartment"
+                placeholder="e.g. Floor 2, Apartment B-3"
+                class="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- BIG CHECKOUT BUTTON -->
+        <button
+            class="w-full bg-indigo-600 text-white py-3 rounded-lg text-lg font-medium
+                   hover:bg-indigo-700 transition shadow-md">
+            Proceed to Payment
+        </button>
+
+    </form>
+
+</div>
+
+
+</div>
+
+{% endif %}
+
+{% endblock %}

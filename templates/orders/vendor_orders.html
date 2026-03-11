@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Your Sold Items</h1>
+
+  {% if items %}
+    <ul class="space-y-4">
+      {% for item in items %}
+        <li class="p-4 bg-white border rounded-lg shadow">
+          <strong>{{ item.product.name }}</strong><br>
+          Qty: {{ item.quantity }}<br>
+          Sold To: {{ item.order.customer.username }}<br>
+          Order Date: {{ item.order.created_at|date:"M d, Y" }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>You have no sales yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}My Products — Vendor{% endblock %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">My Products</h1>
+
+    <a href="{% url 'add_product' %}"
+   class="px-6 py-3 bg-indigo-600 text-white rounded-xl shadow hover:bg-indigo-700 transition 
+          text-sm font-medium ml-2">
+    + Add Product
+</a>
+
+</div>
+
+{% if products %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    {% for product in products %}
+    <div class="bg-white rounded-2xl shadow hover:shadow-lg overflow-hidden transition">
+
+        <!-- Image -->
+        {% if product.image %}
+        <img src="{{ product.image.url }}" class="w-full h-48 object-cover" alt="{{ product.name }}">
+        {% else %}
+        <img src="/static/placeholder.png" class="w-full h-48 object-cover bg-gray-200" alt="No image">
+        {% endif %}
+
+        <div class="p-5">
+            <h2 class="text-lg font-semibold text-gray-900">{{ product.name }}</h2>
+            <p class="text-sm text-gray-500">{{ product.description|truncatewords:12 }}</p>
+
+            <div class="flex justify-between items-center mt-4">
+                <span class="text-indigo-600 font-bold text-lg">${{ product.price }}</span>
+
+                <div class="flex gap-2">
+                    <a href="{% url 'edit_product' product.id %}"
+                       class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                        Edit
+                    </a>
+
+                    <a href="{% url 'delete_product' product.id %}"
+                       class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+                        Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+{% else %}
+<div class="text-center py-20">
+    <img src="/static/empty.png" class="w-40 mx-auto opacity-60">
+    <p class="text-gray-500 text-lg mt-4">You haven't added any products yet.</p>
+    <a href="{% url 'add_product' %}" class="text-indigo-600 underline mt-2 inline-block">
+        Add your first product
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Cart — MiniVendor{% endblock %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+
+  <h1 class="text-2xl font-bold mb-6">Your Cart</h1>
+
+  {% if not cart_items %}
+    <div class="text-center py-20">
+      <img src="/static/empty.png" class="mx-auto w-40 opacity-60" />
+      <h2 class="text-2xl font-semibold text-gray-700 mt-6">Your cart is empty</h2>
+      <a href="{% url 'product_list' %}" class="mt-6 inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg">Browse Products</a>
+    </div>
+  {% else %}
+
+  <div class="bg-white rounded-2xl shadow p-6">
+
+    <div class="space-y-4">
+
+      {% for item in cart_items %}
+      <div
+        class="border rounded-xl p-4 shadow-sm hover:shadow-md transition bg-gradient-to-br from-white to-gray-50"
+        id="cart-item-{{ item.product.id }}"
+      >
+        <div class="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+
+          <!-- Left: image + name -->
+          <div class="flex items-center gap-4">
+            {% if item.product.image %}
+              <img src="{{ item.product.image.url }}" class="w-20 h-20 object-cover rounded-lg" />
+            {% else %}
+              <img src="/static/placeholder.png" class="w-20 h-20 object-cover rounded-lg bg-gray-100" />
+            {% endif %}
+
+            <div>
+              <div class="font-semibold text-gray-900">{{ item.product.name }}</div>
+              <div class="text-sm text-gray-500">Price: ${{ item.product.price }}</div>
+            </div>
+          </div>
+
+          <!-- Right: controls -->
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
+
+            <!-- Quantity Controller -->
+            <div class="flex items-center gap-3 bg-gray-50 rounded-full px-2 py-1 w-fit mx-auto sm:mx-0">
+
+              <!-- Decrease (POST fallback + AJAX) -->
+              <form action="{% url 'decrease_qty' item.product.id %}" method="post" class="inline">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-9 h-9 flex items-center justify-center rounded-full border hover:bg-gray-100"
+                  data-action="decrease"
+                  data-pid="{{ item.product.id }}">
+                  −
+                </button>
+              </form>
+
+              <!-- qty display -->
+              <span id="qty-{{ item.product.id }}" class="text-lg font-semibold w-8 text-center">
+                {{ item.qty }}
+              </span>
+
+              <!-- Increase -->
+              <form action="{% url 'increase_qty' item.product.id %}" method="post" class="inline">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-9 h-9 flex items-center justify-center rounded-full border hover:bg-gray-100"
+                  data-action="increase"
+                  data-pid="{{ item.product.id }}">
+                  +
+                </button>
+              </form>
+
+            </div>
+
+            <!-- Subtotal -->
+            <div class="text-center sm:text-right">
+              <div class="text-xs uppercase tracking-wide text-gray-400">Subtotal</div>
+              <div id="subtotal-{{ item.product.id }}" class="font-bold text-indigo-600 text-lg">
+                ${{ item.subtotal }}
+              </div>
+            </div>
+
+            <!-- Remove button -->
+            <form action="{% url 'remove_from_cart' item.product.id %}" method="post" class="text-center sm:text-left">
+              {% csrf_token %}
+              <button class="text-sm text-red-600 hover:underline">
+                Remove
+              </button>
+            </form>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <div class="mt-6 flex justify-end items-center gap-6">
+      <div class="text-lg font-semibold">Total: <span id="cart-total">${{ total }}</span></div>
+      <a href="{% url 'checkout' %}" class="px-5 py-2 bg-indigo-600 text-white rounded-lg">Checkout</a>
+    </div>
+
+  </div>
+
+  {% endif %}
+</div>
+
+<!-- AJAX script to update quantity without page reload -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Attach to increase & decrease forms/buttons
+  function sendQtyChange(url, pid) {
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+      },
+      credentials: "same-origin",
+    })
+    .then(r => r.json().catch(()=>({ok:false})))
+    .then(data => {
+      if (!data.ok) {
+        // show minimal feedback; you can improve with toast library
+        if (data.error === "max_stock") {
+          alert("Cannot increase. Reached maximum stock.");
+        }
+        return;
+      }
+      // update qty, subtotal, total in DOM
+      const pidStr = String(data.product_id);
+      const qtyEl = document.getElementById("qty-" + pidStr);
+      const subtotalEl = document.getElementById("subtotal-" + pidStr);
+      const totalEl = document.getElementById("cart-total");
+
+      if (qtyEl) qtyEl.textContent = data.qty;
+      if (subtotalEl) subtotalEl.textContent = "$" + Number(data.subtotal).toFixed(2);
+      if (totalEl) totalEl.textContent = "$" + Number(data.total).toFixed(2);
+
+      // if item removed (qty 0), remove its row
+      if (data.qty === 0) {
+        const row = document.getElementById("cart-item-" + pidStr);
+        if (row) row.remove();
+      }
+    })
+    .catch(err => {
+      console.error("Qty change failed", err);
+    });
+  }
+
+  // helper to get csrf cookie
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+  }
+
+  // add click listeners to +/- buttons (the forms will still submit if JS disabled)
+  document.querySelectorAll("button[data-action='increase']").forEach(btn => {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      const pid = this.dataset.pid;
+      const url = "{% url 'increase_qty' 999999 %}".replace("999999", pid);
+      sendQtyChange(url, pid);
+    });
+  });
+  document.querySelectorAll("button[data-action='decrease']").forEach(btn => {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      const pid = this.dataset.pid;
+      const url = "{% url 'decrease_qty' 999999 %}".replace("999999", pid);
+      sendQtyChange(url, pid);
+    });
+  });
+});
+</script>
+
+{% endblock %}

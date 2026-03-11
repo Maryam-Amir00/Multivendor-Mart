@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Product{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
+
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ title }}</h1>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <p class="text-red-600 text-sm">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <button
+            class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 w-full">
+            Save
+        </button>
+    </form>
+
+</div>
+
+{% endblock %}

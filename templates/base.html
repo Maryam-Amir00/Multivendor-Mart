@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}MiniVendor Mart{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+    <style>
+      /* Uniform form styling + focus highlight across the app */
+      form
+        :is(
+          input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+          textarea,
+          select
+        ) {
+        border: 1.5px solid #e5e7eb;
+        border-radius: 0.65rem;
+        background: #fff;
+        color: #111827;
+        padding: 0.65rem 0.85rem;
+        transition: box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, transform 120ms ease;
+      }
+
+      form
+        :is(
+          input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+          textarea,
+          select
+        ):hover {
+        border-color: #d1d5db;
+        background: #f8fafc;
+      }
+
+      form
+        :is(
+          input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+          textarea,
+          select
+        ):is(:focus, :focus-visible) {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 10px 30px -15px rgba(79, 70, 229, 0.35);
+        background: #eef2ff;
+        transform: translateY(-1px);
+      }
+
+      form textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+      form select {
+        background-image: linear-gradient(45deg, transparent 50%, #6366f1 50%),
+          linear-gradient(135deg, #6366f1 50%, transparent 50%);
+        background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 13px) calc(50% - 3px);
+        background-size: 7px 7px;
+        background-repeat: no-repeat;
+        padding-right: 2.5rem;
+      }
+
+      form input:disabled,
+      form textarea:disabled,
+      form select:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      form :is(input[type="checkbox"], input[type="radio"]) {
+        accent-color: #6366f1;
+      }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+  </head>
+
+  <body class="bg-gray-50 text-gray-800 antialiased min-h-screen flex flex-col">
+    <!-- NAVBAR -->
+    <header class="bg-white shadow-sm" x-data="{ mobileOpen: false }">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+          <!-- Brand -->
+          <a href="/" class="flex items-center gap-4">
+            <div
+              class="h-10 w-10 bg-gradient-to-br from-indigo-600 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow"
+            >
+              MV
+            </div>
+            <span class="text-xl font-semibold tracking-wide ml-1">MiniVendor</span>
+          </a>
+
+          <!-- Search (Desktop Only) -->
+          <div class="hidden md:flex flex-1 justify-center px-4">
+            <form
+              action="{% url 'product_list' %}"
+              method="get"
+              class="w-full max-w-2xl"
+            >
+              <div class="relative">
+                <input
+                  name="q"
+                  type="text"
+                  placeholder="Search products..."
+                  class="w-full rounded-full border border-gray-200 px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+
+                <button
+                  type="submit"
+                  class="absolute right-1 top-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm"
+                >
+                  Search
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Controls -->
+          <div class="flex items-center gap-4">
+            <!-- CART -->
+            <a
+              href="{% url 'view_cart' %}"
+              class="relative inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4"
+                />
+              </svg>
+
+              <span class="hidden sm:inline">Cart</span>
+              <span
+                class="ml-1 inline-flex items-center justify-center px-2 py-1 text-xs font-semibold rounded-full bg-red-600 text-white"
+              >
+                {{ cart_total_qty|default:0 }}
+              </span>
+            </a>
+
+            <!-- If Logged In -->
+            {% if user.is_authenticated %}
+            <div class="hidden sm:flex items-center gap-3">
+              <span class="text-sm text-gray-600">
+                Hi, <strong>{{ user.username }}</strong>
+              </span>
+
+              {% if user.is_superuser %}
+              <a
+                href="{% url 'admin_dashboard' %}"
+                class="px-3 py-2 rounded-md text-sm font-medium text-purple-700 bg-purple-100"
+              >
+                Admin Panel
+              </a>
+
+              {% elif user.role == 'vendor' %}
+              <a
+                href="{% url 'vendor_dashboard' %}"
+                class="px-3 py-2 rounded-md text-sm font-medium text-indigo-700 bg-indigo-100"
+              >
+                Vendor
+              </a>
+
+              {% elif user.role == 'customer' %}
+              <a
+                href="{% url 'customer_dashboard' %}"
+                class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                Dashboard
+              </a>
+              {% endif %}
+
+              <a
+                href="{% url 'user_logout' %}"
+                class="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Logout
+              </a>
+            </div>
+
+            {% else %}
+            <!-- If NOT logged in -->
+            <a
+              href="{% url 'login' %}"
+              class="hidden sm:inline px-3 py-2 rounded-md text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+            >
+              Login
+            </a>
+            <a
+              href="{% url 'register_customer' %}"
+              class="hidden sm:inline px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Sign Up
+            </a>
+            {% endif %}
+
+            <!-- Mobile Menu -->
+            <div class="sm:hidden">
+              <button id="mobile-open" class="p-2 rounded-md hover:bg-gray-100" @click="mobileOpen = true">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Drawer -->
+      <div
+        class="sm:hidden"
+        x-show="mobileOpen"
+        x-transition
+        x-cloak
+      >
+        <!-- Backdrop -->
+        <div
+          class="fixed inset-0 bg-black/40"
+          @click="mobileOpen = false"
+        ></div>
+
+        <!-- Panel -->
+        <div class="fixed top-0 right-0 w-80 max-w-[90%] h-full bg-white shadow-xl p-5 overflow-y-auto">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+              <div
+                class="h-9 w-9 bg-gradient-to-br from-indigo-600 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow"
+              >
+                MV
+              </div>
+              <span class="text-lg font-semibold tracking-wide">MiniVendor</span>
+            </div>
+            <button class="p-2 rounded-md hover:bg-gray-100" @click="mobileOpen = false">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Mobile search -->
+          <form action="{% url 'product_list' %}" method="get" class="mb-4">
+            <div class="relative">
+              <input
+                name="q"
+                type="text"
+                placeholder="Search products..."
+                class="w-full rounded-full border border-gray-200 px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                type="submit"
+                class="absolute right-1 top-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm"
+              >
+                Search
+              </button>
+            </div>
+          </form>
+
+          <!-- Auth / actions -->
+          <div class="space-y-2">
+            <a
+              href="{% url 'view_cart' %}"
+              class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100"
+            >
+              <span class="flex items-center gap-2">
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4"
+                  />
+                </svg>
+                Cart
+              </span>
+              <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold rounded-full bg-red-600 text-white">
+                {{ cart_total_qty|default:0 }}
+              </span>
+            </a>
+
+            {% if user.is_authenticated %}
+            <div class="px-1 text-sm text-gray-700">
+              Hi, <strong>{{ user.username }}</strong>
+            </div>
+
+            {% if user.is_superuser %}
+            <a href="{% url 'admin_dashboard' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100">
+              Admin Panel
+            </a>
+            {% elif user.role == 'vendor' %}
+            <a href="{% url 'vendor_dashboard' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
+              Vendor
+            </a>
+            {% elif user.role == 'customer' %}
+            <a href="{% url 'customer_dashboard' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+              Dashboard
+            </a>
+            {% endif %}
+
+            <a href="{% url 'user_logout' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50">
+              Logout
+            </a>
+            {% else %}
+            <a href="{% url 'login' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+              Login
+            </a>
+            <a href="{% url 'register_customer' %}" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+              Sign Up
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT (Pushes footer down) -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- TOAST NOTIFICATIONS -->
+<div 
+    x-data="{ show: false, message: '', type: '' }"
+    x-init="
+        {% if messages %}
+            {% for message in messages %}
+                setTimeout(() => {
+                    message = '{{ message|escapejs }}';
+                    type = '{{ message.tags }}';
+                    show = true;
+
+                    setTimeout(() => { show = false }, 3500);
+                }, {{ forloop.counter0 }} * 500);
+            {% endfor %}
+        {% endif %}
+    "
+    class="fixed top-5 right-5 z-50"
+>
+    <div
+        x-show="show"
+        x-transition
+        class="px-5 py-3 rounded-lg shadow-lg text-white flex items-center gap-3"
+        :class="{
+            'bg-green-600': type === 'success',
+            'bg-red-600': type === 'error',
+            'bg-yellow-600': type === 'warning',
+            'bg-blue-600': type === 'info'
+        }"
+    >
+        <span x-text="message"></span>
+        <button @click="show=false" class="text-white font-bold ml-3">×</button>
+    </div>
+</div>
+
+    <!-- FOOTER (Sticky Bottom) -->
+    <footer class="bg-white border-t py-6">
+      <div class="max-w-7xl mx-auto px-4 text-center text-gray-600">
+        © 2025 MiniVendor — All rights reserved.
+      </div>
+    </footer>
+  </body>
+</html>
